@@ -1,0 +1,157 @@
+# ============================================================
+# Darts Training Companion — .gitignore
+# Stack: .NET 9 / Aspire / Angular / PostgreSQL / Docker
+# ============================================================
+
+# ----------------------------------------
+# .NET / C#
+# ----------------------------------------
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / Rider
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.idea/
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# MSBuild
+*.log
+msbuild*.wrn
+msbuild*.err
+msbuild*.svclog
+
+# dotnet tool
+.dotnet/
+
+# User secrets
+secrets.json
+
+# ASP.NET / Aspire
+ScaffoldingReadMe.txt
+appsettings.*.local.json
+appsettings.Local.json
+.aspire/
+
+# EF Core migrations local
+*.db
+*.db-shm
+*.db-wal
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+TestResult.xml
+coverage/
+*.coveragexml
+*.coverage
+*.coveragexml
+lcov.info
+
+# Code coverage (dotnet)
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# ----------------------------------------
+# Angular / Node.js
+# ----------------------------------------
+darts-training-companion/node_modules/
+darts-training-companion/dist/
+darts-training-companion/.angular/
+darts-training-companion/.sass-cache/
+darts-training-companion/tmp/
+darts-training-companion/out-tsc/
+darts-training-companion/bazel-out/
+darts-training-companion/e2e/protractor-results/
+
+# Also catch node_modules at root if ever used
+node_modules/
+
+# npm / yarn / pnpm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Angular environment files (generated)
+darts-training-companion/src/environments/environment.local.ts
+
+# TypeScript
+*.tsbuildinfo
+*.js.map
+
+# ----------------------------------------
+# OS files
+# ----------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ----------------------------------------
+# Docker
+# ----------------------------------------
+docker-compose.override.yml
+.docker/
+
+# ----------------------------------------
+# Environment / Secrets
+# ----------------------------------------
+.env
+.env.*
+!.env.example
+*.pfx
+*.pem
+*.key
+*.p12
+
+# ----------------------------------------
+# Claude Code (personal settings only)
+# ----------------------------------------
+.claude/settings.local.json
+
+# ----------------------------------------
+# Temporary / Build artefacts
+# ----------------------------------------
+/tmp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
