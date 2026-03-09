@@ -31,17 +31,21 @@ def parse_args():
 
 
 STATUS_MAP = {
-    "Not started": "not_started",
-    "In progress": "in_progress",
-    "Review":      "review",
-    "Done":        "done",
-    "Blocked":     "blocked",
+    "Not started":  "not_started",
+    "In progress":  "in_progress",
+    "Review":       "review",
+    "QA":           "qa",
+    "Merge ready":  "merge_ready",
+    "Done":         "done",
+    "Blocked":      "blocked",
 }
 
 EMOJI_MAP = {
     "🔲": "not_started",
     "🔄": "in_progress",
     "👀": "review",
+    "🧪": "qa",
+    "🔀": "merge_ready",
     "✅": "done",
     "🚫": "blocked",
 }
@@ -149,12 +153,14 @@ def main():
     done_ids = {sid for sid, s in scoped.items() if s["status"] == "done"}
 
     result: dict[str, list] = {
-        "ready":       [],
-        "in_progress": [],
-        "review":      [],
-        "done":        [],
-        "blocked":     [],
-        "waiting":     [],
+        "ready":        [],
+        "in_progress":  [],
+        "review":       [],
+        "qa":           [],
+        "merge_ready":  [],
+        "done":         [],
+        "blocked":      [],
+        "waiting":      [],
     }
 
     for story_id, story in scoped.items():
@@ -175,6 +181,10 @@ def main():
             result["in_progress"].append(story)
         elif status == "review":
             result["review"].append(story)
+        elif status == "qa":
+            result["qa"].append(story)
+        elif status == "merge_ready":
+            result["merge_ready"].append(story)
         elif status == "done":
             result["done"].append(story)
         elif status == "blocked":

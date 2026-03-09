@@ -45,9 +45,7 @@
       "Bash(git blame *)",
       "Bash(git clone *)",
       "Bash(git init*)",
-      "Bash(bash scripts/mark-story.sh **)",
-      
-      "Read(//Users/gelootn/.nuget/packages/aspire.hosting/**)"
+      "Bash(bash scripts/mark-story.sh **)"
     ]
   }
 }

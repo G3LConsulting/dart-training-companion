@@ -18,11 +18,24 @@ Your invocation contains:
 
 ---
 
+## Progress Logging
+
+At every major step, log your progress so the user can follow along in real-time:
+
+```bash
+bash scripts/agent-log.sh reviewer {STORY_ID} "Step N — description of what you're doing"
+```
+
+Log at the **start** of each step. The user watches these logs via `tail -f logs/*.log`.
+
+---
+
 ## Review Workflow
 
 ### Step 1 — Check Out the Branch
 
 ```bash
+bash scripts/agent-log.sh reviewer {STORY_ID} "Step 1 — Checking out branch {BRANCH_NAME}"
 git fetch origin
 git checkout {BRANCH_NAME}
 ```
@@ -30,6 +43,7 @@ git checkout {BRANCH_NAME}
 ### Step 2 — Read Requirements
 
 ```bash
+bash scripts/agent-log.sh reviewer {STORY_ID} "Step 2 — Reading requirements"
 cat CLAUDE.md
 # Find and read the story file
 python3 -c "
@@ -47,12 +61,20 @@ Then: `cat {story_file_path}`
 
 ### Step 3 — Review Against Acceptance Criteria
 
+```bash
+bash scripts/agent-log.sh reviewer {STORY_ID} "Step 3 — Reviewing acceptance criteria"
+```
+
 For each acceptance criterion in the story file, verify it is implemented:
 - Locate the relevant code
 - Confirm the behaviour matches the criterion exactly
 - Note any partial or missing implementations
 
 ### Step 4 — Architecture Review
+
+```bash
+bash scripts/agent-log.sh reviewer {STORY_ID} "Step 4 — Architecture compliance check"
+```
 
 Check these rules from CLAUDE.md:
 
@@ -67,26 +89,26 @@ Check these rules from CLAUDE.md:
 - [ ] TypeScript DTOs match API contracts
 - [ ] No pre-release packages — all NuGet and npm dependencies must be stable releases (no alpha, beta, preview, rc, next, canary tags)
 
-### Step 5 — Build, Test, and Verify AppHost
+### Step 5 — Build and Test
 
 ```bash
+bash scripts/agent-log.sh reviewer {STORY_ID} "Step 5 — Building and running tests"
 # Full solution build
-dotnet build DartsTrainingCompanion.sln
+dotnet build src/backend/DartsTrainingCompanion.sln
 
 # Unit tests
-dotnet test DartsTrainingCompanion.UnitTests --logger "console;verbosity=normal"
+dotnet test src/backend/DartsTrainingCompanion.UnitTests --logger "console;verbosity=normal"
 ```
 
 If Angular files exist in this story's scope:
 ```bash
-cd darts-training-companion && ng test --watch=false --browsers=ChromeHeadless
+cd src/frontend && ng test --watch=false --browsers=ChromeHeadless && cd ../..
 ```
 
 #### 5c — Pre-release package check
 
-Verify no alpha, beta, preview, rc, or pre-release packages were introduced:
-
 ```bash
+bash scripts/agent-log.sh reviewer {STORY_ID} "Step 5c — Checking for pre-release packages"
 # NuGet: check all .csproj files for pre-release version references
 grep -rn --include="*.csproj" -iE "Version=\"[^\"]*(-alpha|-beta|-preview|-rc|-dev)" . && \
     echo "❌ Pre-release NuGet packages found" || echo "✅ No pre-release NuGet packages"
@@ -98,19 +120,11 @@ grep -rn --include="package.json" -iE "\"[^\"]*(-alpha|-beta|-rc|-next|-canary|-
 
 If any pre-release packages are found, mark the review as **NEEDS WORK**.
 
-AppHost smoke test (run after every story):
-```bash
-timeout 30s dotnet run --project DartsTrainingCompanion.AppHost \
-    --no-build 2>&1 | tee /tmp/apphost-review.log || true
-
-grep -iE "(Error|Exception|Unhandled|fail)" /tmp/apphost-review.log | \
-    grep -viE "(ErrorHandler|IErrorHandler|OnError|errorMessage)" && \
-    echo "❌ AppHost has startup errors" || echo "✅ AppHost clean"
-```
-
-Distinguish acceptable failures (connection refused to postgres/seq — services not running locally) from real errors (DI failures, missing registrations, configuration exceptions).
-
 ### Step 6 — Produce Review Report
+
+```bash
+bash scripts/agent-log.sh reviewer {STORY_ID} "Step 6 — Producing review report"
+```
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -134,7 +148,6 @@ Architecture Compliance:
 Test Results:
   Backend:  X passed, Y failed
   Frontend: X passed, Y failed / N/A
-  AppHost:  ✅ Started cleanly / ⚠️ Skipped / ❌ Errors
 
 Issues Found:
   1. {File path, line number}: {description}
@@ -148,6 +161,7 @@ DECISION: APPROVED ✅ / NEEDS WORK ❌
 
 **If APPROVED:**
 ```bash
+bash scripts/agent-log.sh reviewer {STORY_ID} "Step 7 — APPROVED ✅ Marking for QA"
 bash scripts/mark-story.sh {STORY_ID} qa
 git add docs/
 git commit -m "chore: mark {STORY_ID} as ready for QA after review"
@@ -155,6 +169,7 @@ git commit -m "chore: mark {STORY_ID} as ready for QA after review"
 
 **If NEEDS WORK:**
 ```bash
+bash scripts/agent-log.sh reviewer {STORY_ID} "Step 7 — NEEDS WORK ❌ {top issue summary}"
 bash scripts/mark-story.sh {STORY_ID} blocked "Review failed: {top issue summary}"
 git add docs/
 git commit -m "chore: mark {STORY_ID} as blocked — review issues"

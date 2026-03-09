@@ -12,6 +12,18 @@ Bash, Read, Write, Edit. Use them freely.
 
 ---
 
+## Progress Logging
+
+At every major step, log your progress so the user can follow along in real-time:
+
+```bash
+bash scripts/agent-log.sh developer {STORY_ID} "Step N — description of what you're doing"
+```
+
+Log at the **start** of each step. Log again when something notable happens (build result, test count, blocker found). The user watches these logs via `tail -f logs/*.log`.
+
+---
+
 ## Step-by-Step Workflow
 
 ### Step 1 — Read Your Assignment
@@ -20,11 +32,16 @@ Your invocation contains:
 - `STORY_ID` — e.g., `INFRA-01`
 - `STORY_FILE_PATH` — e.g., `docs/dev-plan/features/infrastructure/infra-01-solution-scaffold.md`
 
+```bash
+bash scripts/agent-log.sh developer {STORY_ID} "Step 1 — Starting story implementation"
+```
+
 ### Step 2 — Read All Context Documents
 
 Before writing a single line of code, read these files in full:
 
 ```bash
+bash scripts/agent-log.sh developer {STORY_ID} "Step 2 — Reading context documents"
 cat CLAUDE.md
 cat {STORY_FILE_PATH}
 cat docs/dev-plan/shared/architecture.md
@@ -42,6 +59,7 @@ Extract from the story file:
 ### Step 3 — Create Your Feature Branch
 
 ```bash
+bash scripts/agent-log.sh developer {STORY_ID} "Step 3 — Creating feature branch"
 git fetch origin
 git checkout main
 git pull origin main
@@ -52,20 +70,33 @@ git checkout -b "$BRANCH"
 
 ### Step 4 — Implement the Story
 
+```bash
+bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Implementing story"
+```
+
+Log progress within Step 4 as you complete significant pieces of work:
+```bash
+bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Created domain entity: {EntityName}"
+bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Created command handler: {HandlerName}"
+bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Created controller: {ControllerName}"
+bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Frontend component created: {ComponentName}"
+```
+
 Implement **every acceptance criterion** in the story file. Use the sections below for type-specific guidance.
 
 ---
 
 #### Backend Implementation Guide
 
-**Solution structure** (from CLAUDE.md):
+**Solution structure** (all backend projects under `src/backend/`):
 ```
-DartsTrainingCompanion.Api/
-DartsTrainingCompanion.Application/
-DartsTrainingCompanion.Domain/
-DartsTrainingCompanion.Infrastructure/
-DartsTrainingCompanion.AppHost/
-DartsTrainingCompanion.ServiceDefaults/
+src/backend/
+  DartsTrainingCompanion.sln
+  DartsTrainingCompanion.Api/
+  DartsTrainingCompanion.Application/
+  DartsTrainingCompanion.Domain/
+  DartsTrainingCompanion.Infrastructure/
+  DartsTrainingCompanion.UnitTests/
 ```
 
 **Layer rules — enforced, non-negotiable:**
@@ -146,14 +177,14 @@ builder.Property(x => x.ConfigurationJson)
 
 #### Frontend Implementation Guide
 
-**Angular project root:** `darts-training-companion/`
+**Angular project root:** `src/frontend/`
 
 **File conventions:**
 ```
-src/app/pages/{domain}/{feature}/         # Route-level components
-src/app/components/{name}/                # Reusable components
-src/app/services/api/{domain}.service.ts  # HTTP service layer
-src/app/models/{name}.model.ts            # TypeScript DTOs
+src/frontend/src/app/pages/{domain}/{feature}/         # Route-level components
+src/frontend/src/app/components/{name}/                # Reusable components
+src/frontend/src/app/services/api/{domain}.service.ts  # HTTP service layer
+src/frontend/src/app/models/{name}.model.ts            # TypeScript DTOs
 ```
 
 **Component rules:**
@@ -185,7 +216,7 @@ export class AuthService {
 
 **Backend — xUnit + Moq:**
 
-Location: `DartsTrainingCompanion.UnitTests/{Domain}/{HandlerName}Tests.cs`
+Location: `src/backend/DartsTrainingCompanion.UnitTests/{Domain}/{HandlerName}Tests.cs`
 
 Required test cases per handler:
 1. Happy path — valid input, expected output
@@ -230,14 +261,19 @@ Minimum: one test per public service method, one test per component that verifie
 
 ---
 
-### Step 5 — Build, Test, and Verify AppHost Starts
+### Step 5 — Build and Test
+
+```bash
+bash scripts/agent-log.sh developer {STORY_ID} "Step 5 — Starting build and test"
+```
 
 Run all checks in order. **Fix every failure before proceeding to the next check.**
 
 #### 5a — Solution build
 
 ```bash
-dotnet build DartsTrainingCompanion.sln --no-incremental
+bash scripts/agent-log.sh developer {STORY_ID} "Step 5a — Building solution"
+dotnet build src/backend/DartsTrainingCompanion.sln --no-incremental
 ```
 
 Zero warnings treated as errors. Fix all build errors before continuing.
@@ -245,7 +281,8 @@ Zero warnings treated as errors. Fix all build errors before continuing.
 #### 5b — Unit tests
 
 ```bash
-dotnet test DartsTrainingCompanion.UnitTests --logger "console;verbosity=normal"
+bash scripts/agent-log.sh developer {STORY_ID} "Step 5b — Running unit tests"
+dotnet test src/backend/DartsTrainingCompanion.UnitTests --logger "console;verbosity=normal"
 ```
 
 All tests must pass. Fix failures before continuing.
@@ -253,41 +290,18 @@ All tests must pass. Fix failures before continuing.
 #### 5c — Frontend (only when Angular files were modified)
 
 ```bash
-cd darts-training-companion
+bash scripts/agent-log.sh developer {STORY_ID} "Step 5c — Building and testing frontend"
+cd src/frontend
 npm install
 ng build --configuration development   # verify it compiles
 ng test --watch=false --browsers=ChromeHeadless
-cd ..
+cd ../..
 ```
-
-#### 5d — AppHost smoke test (mandatory for every story)
-
-The AppHost must start cleanly after your changes. Run it with a short timeout, capture the output, and verify no startup errors:
-
-```bash
-# Start the AppHost in the background, give it 30 seconds to initialise, then shut it down
-timeout 30s dotnet run --project DartsTrainingCompanion.AppHost \
-    --no-build 2>&1 | tee /tmp/apphost-smoke.log || true
-
-# Verify no error lines appeared during startup
-if grep -iE "(Error|Exception|Unhandled|fail)" /tmp/apphost-smoke.log | \
-       grep -viE "(ErrorHandler|IErrorHandler|OnError|errorMessage)" ; then
-    echo "❌ AppHost reported errors during startup — fix before committing."
-    exit 1
-else
-    echo "✅ AppHost started cleanly."
-fi
-```
-
-If the AppHost project does not yet exist (INFRA-01 not done), skip this step and note it in the report.
-
-If the AppHost fails to start due to **missing external services** (PostgreSQL, Seq, etc. not running locally), that is acceptable — the check passes as long as there are no **compilation or configuration errors** in the startup log. Distinguish between:
-- `❌ Must fix:` unhandled exceptions, missing registrations, DI resolution failures, configuration errors
-- `✅ Acceptable:` connection refused to postgres/seq/mailhog (infrastructure not running locally)
 
 ### Step 6 — Commit
 
 ```bash
+bash scripts/agent-log.sh developer {STORY_ID} "Step 6 — Committing changes"
 git add --all
 git commit -m "feat({story-id-lower}): {short imperative description}
 
@@ -307,9 +321,14 @@ Files created:
 ### Step 7 — Update Story Status to Review
 
 ```bash
+bash scripts/agent-log.sh developer {STORY_ID} "Step 7 — Marking story for review"
 bash scripts/mark-story.sh {STORY_ID} review
 git add docs/
 git commit -m "chore: mark {STORY_ID} as ready for review"
+```
+
+```bash
+bash scripts/agent-log.sh developer {STORY_ID} "Step 8 — COMPLETE ✅ Story ready for review"
 ```
 
 ### Step 8 — Report Back
@@ -325,18 +344,17 @@ Status:  👀 Review
 
 Files created/modified:
   Backend:
-    • DartsTrainingCompanion.Domain/Entities/{Entity}.cs
-    • DartsTrainingCompanion.Application/{Domain}/Commands/{Name}Command.cs
+    • src/backend/DartsTrainingCompanion.Domain/Entities/{Entity}.cs
+    • src/backend/DartsTrainingCompanion.Application/{Domain}/Commands/{Name}Command.cs
     • ... (list all)
   Frontend:
-    • darts-training-companion/src/app/pages/{domain}/... (if applicable)
+    • src/frontend/src/app/pages/{domain}/... (if applicable)
   Tests:
-    • DartsTrainingCompanion.UnitTests/{Domain}/{Handler}Tests.cs
+    • src/backend/DartsTrainingCompanion.UnitTests/{Domain}/{Handler}Tests.cs
 
 Test results:
   Backend:  X passed, 0 failed
   Frontend: X passed, 0 failed (or "not applicable")
-  AppHost:  ✅ Started cleanly / ⚠️ Skipped (AppHost not yet scaffolded) / ❌ Errors (see notes)
 
 Acceptance criteria:
   [x] {criterion 1}
@@ -350,25 +368,25 @@ Acceptance criteria:
 
 | Artefact | Path |
 |---|---|
-| Domain entity | `DartsTrainingCompanion.Domain/Entities/{Name}.cs` |
-| Enum | `DartsTrainingCompanion.Domain/Enums/{Name}.cs` |
-| Value object | `DartsTrainingCompanion.Domain/ValueObjects/{Name}.cs` |
-| Command | `DartsTrainingCompanion.Application/{Domain}/Commands/{Name}/{Name}Command.cs` |
-| Command handler | `DartsTrainingCompanion.Application/{Domain}/Commands/{Name}/{Name}CommandHandler.cs` |
-| Command validator | `DartsTrainingCompanion.Application/{Domain}/Commands/{Name}/{Name}CommandValidator.cs` |
-| Query | `DartsTrainingCompanion.Application/{Domain}/Queries/{Name}/{Name}Query.cs` |
-| Query handler | `DartsTrainingCompanion.Application/{Domain}/Queries/{Name}/{Name}QueryHandler.cs` |
-| DTO | `DartsTrainingCompanion.Application/{Domain}/DTOs/{Name}Dto.cs` |
-| Controller | `DartsTrainingCompanion.Api/Controllers/{Domain}Controller.cs` |
-| EF entity config | `DartsTrainingCompanion.Infrastructure/Persistence/Configurations/{Name}Configuration.cs` |
-| EF DbContext | `DartsTrainingCompanion.Infrastructure/Persistence/AppDbContext.cs` |
-| Repository interface | `DartsTrainingCompanion.Application/Common/Interfaces/I{Name}Repository.cs` |
-| Repository impl | `DartsTrainingCompanion.Infrastructure/Persistence/Repositories/{Name}Repository.cs` |
-| Background service | `DartsTrainingCompanion.Infrastructure/{Feature}/{Name}Service.cs` |
-| Angular service | `darts-training-companion/src/app/services/api/{domain}.service.ts` |
-| Angular component | `darts-training-companion/src/app/pages/{domain}/{name}/{name}.component.ts` |
-| Angular model | `darts-training-companion/src/app/models/{name}.model.ts` |
-| Backend unit test | `DartsTrainingCompanion.UnitTests/{Domain}/{HandlerName}Tests.cs` |
+| Domain entity | `src/backend/DartsTrainingCompanion.Domain/Entities/{Name}.cs` |
+| Enum | `src/backend/DartsTrainingCompanion.Domain/Enums/{Name}.cs` |
+| Value object | `src/backend/DartsTrainingCompanion.Domain/ValueObjects/{Name}.cs` |
+| Command | `src/backend/DartsTrainingCompanion.Application/{Domain}/Commands/{Name}/{Name}Command.cs` |
+| Command handler | `src/backend/DartsTrainingCompanion.Application/{Domain}/Commands/{Name}/{Name}CommandHandler.cs` |
+| Command validator | `src/backend/DartsTrainingCompanion.Application/{Domain}/Commands/{Name}/{Name}CommandValidator.cs` |
+| Query | `src/backend/DartsTrainingCompanion.Application/{Domain}/Queries/{Name}/{Name}Query.cs` |
+| Query handler | `src/backend/DartsTrainingCompanion.Application/{Domain}/Queries/{Name}/{Name}QueryHandler.cs` |
+| DTO | `src/backend/DartsTrainingCompanion.Application/{Domain}/DTOs/{Name}Dto.cs` |
+| Controller | `src/backend/DartsTrainingCompanion.Api/Controllers/{Domain}Controller.cs` |
+| EF entity config | `src/backend/DartsTrainingCompanion.Infrastructure/Persistence/Configurations/{Name}Configuration.cs` |
+| EF DbContext | `src/backend/DartsTrainingCompanion.Infrastructure/Persistence/AppDbContext.cs` |
+| Repository interface | `src/backend/DartsTrainingCompanion.Application/Common/Interfaces/I{Name}Repository.cs` |
+| Repository impl | `src/backend/DartsTrainingCompanion.Infrastructure/Persistence/Repositories/{Name}Repository.cs` |
+| Background service | `src/backend/DartsTrainingCompanion.Infrastructure/{Feature}/{Name}Service.cs` |
+| Angular service | `src/frontend/src/app/services/api/{domain}.service.ts` |
+| Angular component | `src/frontend/src/app/pages/{domain}/{name}/{name}.component.ts` |
+| Angular model | `src/frontend/src/app/models/{name}.model.ts` |
+| Backend unit test | `src/backend/DartsTrainingCompanion.UnitTests/{Domain}/{HandlerName}Tests.cs` |
 | Frontend unit test | alongside source file as `{name}.spec.ts` |
 
 ---
@@ -377,8 +395,9 @@ Acceptance criteria:
 
 If you are blocked (ambiguous requirement, missing dependency output, build error you cannot resolve):
 
-1. Commit what you have with a clear message indicating the blocker.
-2. Run: `bash scripts/mark-story.sh {STORY_ID} blocked "{specific reason}"`
+1. Log: `bash scripts/agent-log.sh developer {STORY_ID} "🚫 BLOCKED — {specific reason}"`
+2. Commit what you have with a clear message indicating the blocker.
+3. Run: `bash scripts/mark-story.sh {STORY_ID} blocked "{specific reason}"`
 3. Commit the README update.
 4. Return a report that begins with `🚫 BLOCKED:` and describes exactly what is needed.
 

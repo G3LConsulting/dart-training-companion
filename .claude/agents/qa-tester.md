@@ -26,11 +26,24 @@ Your invocation contains:
 
 ---
 
+## Progress Logging
+
+At every major step, log your progress so the user can follow along in real-time:
+
+```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step N — description of what you're doing"
+```
+
+Log at the **start** of each step. The user watches these logs via `tail -f logs/*.log`.
+
+---
+
 ## QA Workflow
 
 ### Step 1 — Check Out the Branch
 
 ```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 1 — Checking out branch {BRANCH_NAME}"
 git fetch origin
 git checkout {BRANCH_NAME}
 ```
@@ -38,6 +51,7 @@ git checkout {BRANCH_NAME}
 ### Step 2 — Read Requirements
 
 ```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 2 — Reading requirements"
 cat CLAUDE.md
 cat docs/dev-plan/shared/architecture.md
 cat docs/dev-plan/shared/api-contracts.md
@@ -69,6 +83,10 @@ Extract all acceptance criteria — these are your test targets.
 
 ### Step 3 — Full Regression Build and Unit Tests
 
+```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 3 — Building solution and running unit tests"
+```
+
 Run the complete build and all unit tests to verify nothing regressed.
 
 Build the solution:
@@ -93,9 +111,17 @@ npm test -- --watch=false --browsers=ChromeHeadless 2>&1
 cd ../..
 ```
 
+```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 3 — Build and tests complete"
+```
+
 ---
 
 ### Step 4 — Start Docker Environment
+
+```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 4 — Starting Docker environment"
+```
 
 Build and start the full stack to enable live integration verification.
 
@@ -121,9 +147,17 @@ docker compose -f docker/docker-compose.yml logs --tail=100 api
 
 A real startup error (DI failure, missing migration, bad config) is a **QA FAIL**. A slow cold start (postgres initialising, first build) is acceptable — wait a further 30 seconds before failing.
 
+```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 4 — Docker environment ready"
+```
+
 ---
 
 ### Step 5 — Read Logs for Errors
+
+```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 5 — Checking logs for errors"
+```
 
 With the stack running, check both Docker logs and Seq for errors introduced by this story.
 
@@ -150,6 +184,10 @@ Unhandled exceptions, DI resolution failures, and configuration errors are **QA 
 ---
 
 ### Step 6 — API Contract Verification (Live)
+
+```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 6 — Verifying API contracts against live stack"
+```
 
 With the stack running, verify every endpoint introduced or modified by this story against `api-contracts.md`.
 
@@ -186,6 +224,10 @@ List all mismatches as QA issues.
 
 ### Step 7 — Acceptance Criteria Verification
 
+```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 7 — Verifying acceptance criteria"
+```
+
 For each acceptance criterion from the story file, perform a concrete check — either via code inspection or by probing the live stack. Use `architecture.md` to guide where to look for each criterion type.
 
 Document each criterion as `✅ Verified` or `❌ Not met — {reason}`.
@@ -193,6 +235,10 @@ Document each criterion as `✅ Verified` or `❌ Not met — {reason}`.
 ---
 
 ### Step 8 — Regression Check
+
+```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 8 — Checking for deleted tests"
+```
 
 Verify that no existing tests were removed:
 
@@ -206,6 +252,10 @@ If any test files were deleted without documented justification in the commit me
 
 ### Step 9 — Tear Down Docker Environment
 
+```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 9 — Tearing down Docker environment"
+```
+
 Always tear down after QA, regardless of pass/fail outcome:
 
 ```bash
@@ -215,6 +265,10 @@ docker compose -f docker/docker-compose.yml down
 ---
 
 ### Step 10 — Produce QA Report and Update Status
+
+```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 10 — Producing QA report"
+```
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -258,6 +312,7 @@ QA VERDICT: PASS ✅ / FAIL ❌
 **If QA PASS:**
 
 ```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "QA PASS ✅ — Marking as merge-ready"
 bash scripts/mark-story.sh {STORY_ID} merge-ready
 git add docs/
 git commit -m "chore: mark {STORY_ID} as merge-ready after QA"
@@ -266,6 +321,7 @@ git commit -m "chore: mark {STORY_ID} as merge-ready after QA"
 **If QA FAIL:**
 
 ```bash
+bash scripts/agent-log.sh qa-tester {STORY_ID} "QA FAIL ❌ — {top issue summary}"
 bash scripts/mark-story.sh {STORY_ID} blocked "QA failed: {top issue summary}"
 git add docs/
 git commit -m "chore: mark {STORY_ID} as blocked — QA failures"

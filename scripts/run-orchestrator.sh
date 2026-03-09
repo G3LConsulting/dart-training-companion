@@ -46,21 +46,21 @@ echo "📊  Current story status (MVP scope):"
 python3 scripts/get-ready-stories.py --scope mvp | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
-print(f\"    ✅ Done:        {len(data['done'])}\")
-print(f\"    🔄 In progress: {len(data['in_progress'])}\")
-print(f\"    👀 Review:      {len(data['review'])}\")
-print(f\"    🔲 Ready:       {len(data['ready'])}\")
-print(f\"    ⏳ Waiting:     {len(data['waiting'])}\")
-print(f\"    🚫 Blocked:     {len(data['blocked'])}\")
+print(f\"    ✅ Done:         {len(data['done'])}\")
+print(f\"    🔀 Merge ready:  {len(data.get('merge_ready', []))}\")
+print(f\"    🧪 QA:           {len(data.get('qa', []))}\")
+print(f\"    👀 Review:       {len(data['review'])}\")
+print(f\"    🔄 In progress:  {len(data['in_progress'])}\")
+print(f\"    🔲 Ready:        {len(data['ready'])}\")
+print(f\"    ⏳ Waiting:      {len(data['waiting'])}\")
+print(f\"    🚫 Blocked:      {len(data['blocked'])}\")
 print()
 
-if data['ready']:
-    ids = ', '.join(s['id'] for s in data['ready'])
+work = (data.get('merge_ready', []) + data.get('qa', [])
+        + data['review'] + data['ready'])
+if work:
+    ids = ', '.join(s['id'] for s in work)
     print(f'    Stories queued for this wave: {ids}')
-elif data['review']:
-    ids = ', '.join(s['id'] for s in data['review'])
-    print(f'    ⚠️  Nothing ready — pending your review: {ids}')
-    print(f'    After merging, run: bash scripts/mark-story.sh STORY-ID done')
 elif data['in_progress']:
     ids = ', '.join(s['id'] for s in data['in_progress'])
     print(f'    ⚠️  Stories in progress from previous run: {ids}')
@@ -78,6 +78,17 @@ fi
 
 echo ""
 echo "🚀  Launching orchestrator agent..."
+echo ""
+
+# ── Prepare log directory ────────────────────────────────────────────────────
+mkdir -p logs
+echo "📋  Agent progress logs → logs/"
+echo "    Open a second terminal and run:"
+echo ""
+echo "      tail -f logs/*.log"
+echo ""
+echo "    to watch all agents in real-time."
+echo "────────────────────────────────────────────────────────"
 echo ""
 
 # ── Build the orchestrator prompt ─────────────────────────────────────────────

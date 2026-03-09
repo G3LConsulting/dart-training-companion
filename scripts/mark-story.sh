@@ -9,6 +9,8 @@
 # STATUS values:
 #   in-progress   →  🔄 In progress
 #   review        →  👀 Review
+#   qa            →  🧪 QA
+#   merge-ready   →  🔀 Merge ready
 #   done          →  ✅ Done
 #   blocked       →  🚫 Blocked
 #   not-started   →  🔲 Not started
@@ -37,7 +39,7 @@ fi
 
 # Validate status argument
 case "$STATUS" in
-    in-progress|review|done|blocked|not-started) ;;
+    in-progress|review|qa|merge-ready|done|blocked|not-started) ;;
     *)
         echo "❌ Invalid STATUS: '$STATUS'" >&2
         echo "   Valid values: in-progress | review | done | blocked | not-started" >&2
@@ -57,11 +59,13 @@ notes     = sys.argv[3]
 readme    = sys.argv[4]
 
 STATUS_TEXT = {
-    "in-progress": "🔄 In progress",
-    "review":      "👀 Review",
-    "done":        "✅ Done",
-    "blocked":     "🚫 Blocked",
-    "not-started": "🔲 Not started",
+    "in-progress":  "🔄 In progress",
+    "review":       "👀 Review",
+    "qa":           "🧪 QA",
+    "merge-ready":  "🔀 Merge ready",
+    "done":         "✅ Done",
+    "blocked":      "🚫 Blocked",
+    "not-started":  "🔲 Not started",
 }
 
 new_status_text = STATUS_TEXT[status]

@@ -46,7 +46,7 @@ if result.returncode != 0:
     sys.exit(0)
 
 data = json.loads(result.stdout)
-buckets = ["ready", "in_progress", "review", "done", "blocked", "waiting"]
+buckets = ["ready", "in_progress", "review", "qa", "merge_ready", "done", "blocked", "waiting"]
 for bucket in buckets:
     for s in data.get(bucket, []):
         if s["id"] == story_id:
@@ -88,6 +88,17 @@ if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
+echo ""
+
+# ── Prepare log directory ────────────────────────────────────────────────────
+mkdir -p logs
+echo "📋  Agent progress logs → logs/"
+echo "    Open a second terminal and run:"
+echo ""
+echo "      tail -f logs/*.log"
+echo ""
+echo "    to watch the agent in real-time."
+echo "────────────────────────────────────────────────────────"
 echo ""
 
 # ── Mark story in-progress ────────────────────────────────────────────────────
