@@ -308,7 +308,7 @@ Files created:
 
 ```bash
 bash scripts/mark-story.sh {STORY_ID} review
-git add docs/dev-plan/README.md
+git add docs/
 git commit -m "chore: mark {STORY_ID} as ready for review"
 ```
 

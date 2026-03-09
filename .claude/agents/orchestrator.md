@@ -48,6 +48,76 @@ If any stories are in `review` status, remind the user:
 
 ### Step 4 — Spawn Developer Agents
 
+```bash
+# mark-story.sh updates both README.md and the individual story file
+bash scripts/mark-story.sh {STORY_ID} done
+
+# Stage all modified docs (README + story file)
+git add docs/
+git commit -m "chore: mark {STORY_ID} as done after merge"
+```
+
+**If the merge fails (conflict):**
+
+```bash
+git merge --abort
+bash scripts/mark-story.sh {STORY_ID} blocked "Merge conflict — manual resolution required"
+git add docs/
+git commit -m "chore: mark {STORY_ID} as blocked — merge conflict"
+```
+
+Process `merge_ready` stories **sequentially** to avoid HEAD conflicts.
+
+### Step 4 — Spawn QA-Tester Agents
+
+For each story in `qa` (up to **3 in parallel**):
+
+1. Read the story file: `cat {STORY_FILE_PATH}`
+
+2. Use the **Agent tool** to spawn a QA-tester agent:
+
+   ```
+   You are a QA-tester agent.
+
+   Your assignment:
+   STORY_ID: {STORY_ID}
+   BRANCH_NAME: feat/{story-id-lowercase}
+
+   Full instructions are in:
+     .claude/agents/qa-tester.md
+
+   Read that file first, then execute the QA checks exactly as described.
+   Do not stop until a PASS or FAIL verdict is produced and the story status is updated.
+   ```
+
+Run all QA-tester Agents with no mutual dependencies **concurrently** in a single message.
+
+### Step 5 — Spawn Reviewer Agents
+
+For each story in `review` (up to **3 in parallel**):
+
+1. Read the story file: `cat {STORY_FILE_PATH}`
+
+2. Use the **Agent tool** to spawn a reviewer agent:
+
+   ```
+   You are a reviewer agent.
+
+   Your assignment:
+   STORY_ID: {STORY_ID}
+   BRANCH_NAME: feat/{story-id-lowercase}
+
+   Full instructions are in:
+     .claude/agents/reviewer.md
+
+   Read that file first, then perform the review exactly as described.
+   Do not stop until an APPROVED or NEEDS WORK verdict is produced and the story status is updated.
+   ```
+
+Run all reviewer Agents with no mutual dependencies **concurrently** in a single message.
+
+### Step 6 — Spawn Developer Agents
+
 For each story in `ready` (up to **3 in parallel**, choosing stories with no mutual dependencies):
 
 1. Mark it in-progress first:

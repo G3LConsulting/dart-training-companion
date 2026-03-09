@@ -148,14 +148,16 @@ DECISION: APPROVED ✅ / NEEDS WORK ❌
 
 **If APPROVED:**
 ```bash
-bash scripts/mark-story.sh {STORY_ID} done
-git add docs/dev-plan/README.md
-git commit -m "chore: mark {STORY_ID} as done after review"
+bash scripts/mark-story.sh {STORY_ID} qa
+git add docs/
+git commit -m "chore: mark {STORY_ID} as ready for QA after review"
 ```
 
 **If NEEDS WORK:**
 ```bash
 bash scripts/mark-story.sh {STORY_ID} blocked "Review failed: {top issue summary}"
+git add docs/
+git commit -m "chore: mark {STORY_ID} as blocked — review issues"
 ```
 
 Report the full issue list back to the orchestrator or user so the developer agent can be re-spawned to fix the issues.
