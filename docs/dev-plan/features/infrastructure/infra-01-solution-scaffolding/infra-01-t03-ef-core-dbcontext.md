@@ -30,11 +30,12 @@ Create AppDbContext, entity configurations using IEntityTypeConfiguration<T> pat
 
 ## Definition of Done
 
-- [ ] AppDbContext compiles and extends DbContext
+- [ ] AppDbContext compiles and extends `IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>`
 - [ ] All DbSet<T> properties are defined for each entity
-- [ ] IEntityTypeConfiguration<T> implementations configured via AddEntityTypesFromAssembly() or explicit configuration
-- [ ] dotnet ef migrations add InitialCreate runs without error
-- [ ] dotnet ef database update applies to local PostgreSQL without error
+- [ ] `OnModelCreating` uses `ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly)` — feature agents will create configuration files that are auto-discovered
+- [ ] Each entity has its own `IEntityTypeConfiguration<T>` implementation in `Persistence/Configurations/`
+- [ ] `dotnet ef migrations add InitialCreate` runs without error
+- [ ] `dotnet ef database update` applies to local PostgreSQL without error
 - [ ] All JSONB columns configured properly (e.g., game state, statistics as JSON)
 - [ ] Composite indexes created where needed (e.g., UserId + GameType on GameSession)
 - [ ] Foreign key constraints properly defined
@@ -43,40 +44,75 @@ Create AppDbContext, entity configurations using IEntityTypeConfiguration<T> pat
 
 ## Implementation Notes
 
-1. **DbContext Setup**:
-   - Configure PostgreSQL provider with NpgsqlConnection
-   - Register all DbSet<T> properties
-   - Override OnModelCreating to apply configurations
-   - Add seed data for any required static data (e.g., game modes)
+1. **DbContext Setup — Critical for Parallel Development**:
+   - Extend `IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>`
+   - Register all DbSet<T> properties for INFRA-01 entities
+   - **Use `ApplyConfigurationsFromAssembly` in `OnModelCreating`** — this auto-discovers all `IEntityTypeConfiguration<T>` implementations in the Infrastructure assembly, so feature agents never need to touch `OnModelCreating`
 
-2. **Entity Configurations**:
-   - Use builder.Entity<T>().HasKey() for primary keys
-   - Configure one-to-many relationships with HasOne/WithMany
-   - Configure many-to-many relationships if needed
+   ```csharp
+   public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
+   {
+       public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+       // DbSet properties — feature agents add their own here
+       public DbSet<GameSession> GameSessions => Set<GameSession>();
+       public DbSet<Turn> Turns => Set<Turn>();
+       public DbSet<CricketTurn> CricketTurns => Set<CricketTurn>();
+       public DbSet<DartEntry> DartEntries => Set<DartEntry>();
+       public DbSet<UserStats> UserStats => Set<UserStats>();
+       public DbSet<PersonalBest> PersonalBests => Set<PersonalBest>();
+       public DbSet<ExportJob> ExportJobs => Set<ExportJob>();
+       public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+       protected override void OnModelCreating(ModelBuilder builder)
+       {
+           base.OnModelCreating(builder);
+           // Auto-discovers ALL IEntityTypeConfiguration<T> in this assembly
+           builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+       }
+
+       public override Task<int> SaveChangesAsync(CancellationToken ct = default)
+       {
+           // Auto-set UpdatedAt for modified entities
+           foreach (var entry in ChangeTracker.Entries<BaseEntity>()
+               .Where(e => e.State == EntityState.Modified))
+           {
+               entry.Entity.UpdatedAt = DateTime.UtcNow;
+           }
+           return base.SaveChangesAsync(ct);
+       }
+   }
+   ```
+
+2. **Entity Configurations (one file per entity)**:
+   - Create in `Persistence/Configurations/{EntityName}Configuration.cs`
+   - Use `builder.HasKey()` for primary keys
+   - Configure relationships with HasOne/WithMany
    - Set indexes using HasIndex()
    - Configure value conversions for enums
+   - **Each config file is owned by one feature** — no merge conflicts
 
 3. **PostgreSQL Specific**:
-   - Use .HasColumnType("jsonb") for JSON fields
-   - Use .HasColumnType("uuid") for Guid columns
-   - Use .HasColumnType("text[]") for array types if needed
-   - Enable UUID generation with .HasDefaultValueSql("gen_random_uuid()")
+   - Use `.HasColumnType("jsonb")` for JSON fields
+   - Use `.HasColumnType("uuid")` for Guid columns
+   - Enable UUID generation with `.HasDefaultValueSql("gen_random_uuid()")`
 
 4. **Audit Columns**:
-   - Add CreatedAt and UpdatedAt to base entity
-   - Configure with .HasDefaultValueSql("CURRENT_TIMESTAMP")
-   - UpdatedAt should be set on model changes (may require a SaveChanges override)
+   - Define `BaseEntity` with `CreatedAt` and `UpdatedAt`
+   - Configure `CreatedAt` with `.HasDefaultValueSql("CURRENT_TIMESTAMP")`
+   - `UpdatedAt` set via `SaveChangesAsync` override (see above)
 
-5. **Migration Workflow**:
+5. **Migration Workflow — INFRA-01 Only**:
+   - INFRA-01 is the only story that creates a migration (Wave 0, runs alone)
    - Add Microsoft.EntityFrameworkCore.Tools NuGet package
    - Add Npgsql.EntityFrameworkCore.PostgreSQL NuGet package
-   - Ensure DartsCompanion.Api has Program.cs with DbContext registration
-   - Run: dotnet ef migrations add InitialCreate --project src/DartsCompanion.Infrastructure
+   - Run: `dotnet ef migrations add InitialCreate --project src/DartsCompanion.Infrastructure`
    - Verify migration SQL before applying
-   - Run: dotnet ef database update to apply
+   - Run: `dotnet ef database update` to apply
+   - **All subsequent migrations are created by the migration agent after each wave merges** — see [Parallel Development Guide](../../../shared/parallel-development-guide.md#ef-core-migration-protocol)
 
 ## References
 
 - [Domain Model](../../../shared/domain-model.md)
-- [Technical Approach §5](../../../shared/technical-approach.md#section-5-domain-model)
-- [Technical Approach §11](../../../shared/technical-approach.md#section-11-infrastructure--deployment)
+- [Architecture](../../../shared/architecture.md)
+- [Parallel Development Guide](../../../shared/parallel-development-guide.md)

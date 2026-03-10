@@ -246,3 +246,4 @@ graph TD
 - [Architecture](shared/architecture.md) — Solution structure, layer rules, CQRS, ADRs, platform choices
 - [API Contracts](shared/api-contracts.md) — All endpoints, CQRS commands/queries, FluentValidation rules
 - [Non-Functional Requirements](shared/non-functional-requirements.md) — Performance, offline, GDPR, security, observability
+- [Parallel Development Guide](shared/parallel-development-guide.md) — Worktree strategy, wave execution, bottleneck file patterns, EF Core migration protocol

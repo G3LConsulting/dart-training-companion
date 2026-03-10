@@ -35,12 +35,13 @@ Create Angular 21 PWA scaffold with standalone components, @angular/pwa integrat
 
 ## Definition of Done
 
-- [ ] ng serve runs without errors at localhost:4200
-- [ ] ng build completes successfully
+- [ ] `ng serve` runs without errors at localhost:4200
+- [ ] `ng build` completes successfully
 - [ ] PWA manifest (manifest.webmanifest) is present and valid
 - [ ] Service worker (ngsw) is registered in production build
-- [ ] Standalone components configured in app.config.ts
-- [ ] Routing skeleton includes placeholders for Game, Stats, Settings modules
+- [ ] Standalone components configured in `app.config.ts`
+- [ ] `app.routes.ts` uses lazy-loaded feature route files (see pattern below) — feature agents will never modify this file
+- [ ] Feature route stub files created for: auth, game, stats, history, profile, export
 - [ ] Angular Material or PrimeNG installed for UI components
 - [ ] Environment configurations for API endpoint (localhost:8080 for dev, production URL for prod)
 - [ ] TypeScript strict mode enabled
@@ -64,10 +65,58 @@ Create Angular 21 PWA scaffold with standalone components, @angular/pwa integrat
    - Ensure service worker caching strategy in ngsw-config.json for API endpoints and static assets
    - Generate PWA icons (192x192, 512x512 minimum)
 
-4. **Routing Structure**:
-   - Create routes for: Home, Game, Stats, Settings, Auth
-   - Use lazy loading for feature modules
-   - Define in app.routes.ts as route array
+4. **Routing Structure — Critical for Parallel Development**:
+
+   `app.routes.ts` must be structured so that **no feature agent ever needs to modify it**. All feature routes live in feature-scoped route files.
+
+   ```typescript
+   // app.routes.ts — created once in INFRA-01, never modified by feature agents
+   import { Routes } from '@angular/router';
+
+   export const routes: Routes = [
+     { path: '', redirectTo: 'home', pathMatch: 'full' },
+     {
+       path: 'auth',
+       loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
+     },
+     {
+       path: 'game',
+       loadChildren: () => import('./features/game/game.routes').then(m => m.GAME_ROUTES)
+     },
+     {
+       path: 'stats',
+       loadChildren: () => import('./features/stats/stats.routes').then(m => m.STATS_ROUTES)
+     },
+     {
+       path: 'history',
+       loadChildren: () => import('./features/history/history.routes').then(m => m.HISTORY_ROUTES)
+     },
+     {
+       path: 'profile',
+       loadChildren: () => import('./features/profile/profile.routes').then(m => m.PROFILE_ROUTES)
+     },
+     {
+       path: 'export',
+       loadChildren: () => import('./features/export/export.routes').then(m => m.EXPORT_ROUTES)
+     },
+     {
+       path: 'home',
+       loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent)
+     },
+     { path: '**', redirectTo: 'home' }
+   ];
+   ```
+
+   Create stub route files for each feature:
+   ```typescript
+   // features/game/game.routes.ts
+   import { Routes } from '@angular/router';
+   export const GAME_ROUTES: Routes = [];
+   ```
+
+   Feature agents add their routes to their own `{feature}.routes.ts` — no conflict.
+
+   Similarly, `app.config.ts` should use `provideRouter(routes)` and `provideHttpClient(withInterceptors([...]))`. Feature-specific services should use `providedIn: 'root'` — no need to touch `app.config.ts`.
 
 5. **Environment Configuration**:
    - environment.ts: API at http://localhost:8080
@@ -87,4 +136,4 @@ Create Angular 21 PWA scaffold with standalone components, @angular/pwa integrat
 ## References
 
 - [Architecture](../../../shared/architecture.md)
-- [Technical Approach §6](../../../shared/technical-approach.md#section-6-frontend-architecture)
+- [Parallel Development Guide](../../../shared/parallel-development-guide.md)
