@@ -12,17 +12,12 @@ Bash, Read. Use them freely.
 
 ---
 
-## Working Directory — Critical Rule
-
-You are already running in the project root. **NEVER prefix commands with `cd /absolute/path &&`.**
-
----
-
 ## Your Assignment
 
 Your invocation contains:
 - `STORY_ID` — e.g., `INFRA-01`
 - `BRANCH_NAME` — e.g., `feat/infra-01`
+- `WORKTREE_PATH` — the absolute path to the git worktree for this story (e.g., `.worktrees/feat/infra-01`)
 
 ---
 
@@ -56,12 +51,14 @@ The user watches these logs via `tail -f logs/*.log`.
 
 ## QA Workflow
 
-### Step 1 — Check Out the Branch
+### Step 1 — Enter the Worktree
+
+**CRITICAL:** All commands run inside the worktree, not the main checkout. The worktree already has the feature branch checked out.
 
 ```bash
-bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 1 — Checking out branch {BRANCH_NAME}"
-git fetch origin
-git checkout {BRANCH_NAME}
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 1 — Entering worktree for {BRANCH_NAME}"
+cd {WORKTREE_PATH}
+git branch --show-current   # verify: should be feat/{story-id-lowercase}
 ```
 
 ### Step 2 — Read Requirements
@@ -124,7 +121,7 @@ If frontend files exist in this story's scope:
 ```bash
 cd src/frontend
 npm test -- --watch=false --browsers=ChromeHeadless 2>&1
-cd ../..
+cd {WORKTREE_PATH}   # return to worktree root
 ```
 
 ```bash

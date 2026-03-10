@@ -15,6 +15,7 @@ Bash, Read, Edit.
 Your invocation contains:
 - `STORY_ID` — e.g., `INFRA-01`
 - `BRANCH_NAME` — e.g., `feat/infra-01`
+- `WORKTREE_PATH` — the absolute path to the git worktree for this story (e.g., `.worktrees/feat/infra-01`)
 
 ---
 
@@ -46,12 +47,14 @@ The user watches these logs via `tail -f logs/*.log`.
 
 ## Review Workflow
 
-### Step 1 — Check Out the Branch
+### Step 1 — Enter the Worktree
+
+**CRITICAL:** All commands run inside the worktree, not the main checkout. The worktree already has the feature branch checked out.
 
 ```bash
-bash scripts/agent-log.sh reviewer {STORY_ID} "Step 1 — Checking out branch {BRANCH_NAME}"
-git fetch origin
-git checkout {BRANCH_NAME}
+bash scripts/agent-log.sh reviewer {STORY_ID} "Step 1 — Entering worktree for {BRANCH_NAME}"
+cd {WORKTREE_PATH}
+git branch --show-current   # verify: should be feat/{story-id-lowercase}
 ```
 
 ### Step 2 — Read Requirements
@@ -123,7 +126,7 @@ dotnet test src/backend/DartsTrainingCompanion.UnitTests --logger "console;verbo
 
 If Angular files exist in this story's scope:
 ```bash
-cd src/frontend && ng test --watch=false --browsers=ChromeHeadless && cd ../..
+cd src/frontend && ng test --watch=false --browsers=ChromeHeadless && cd {WORKTREE_PATH}
 ```
 
 #### 5c — Pre-release package check

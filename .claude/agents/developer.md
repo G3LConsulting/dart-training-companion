@@ -45,16 +45,19 @@ The user watches these logs via `tail -f logs/*.log`.
 Your invocation contains:
 - `STORY_ID` — e.g., `INFRA-01`
 - `STORY_FILE_PATH` — e.g., `docs/dev-plan/features/infrastructure/infra-01-solution-scaffold.md`
+- `WORKTREE_PATH` — the absolute path to the git worktree for this story (e.g., `.worktrees/feat/infra-01`)
+- `PROJECT_ROOT` — the main repo root (the worktree shares the same git database)
 
 ```bash
 bash scripts/agent-log.sh developer {STORY_ID} "Step 1 — Starting story implementation"
 ```
 
-### Step 2 — Read All Context Documents
+### Step 2 — Enter the Worktree and Read All Context Documents
 
-Before writing a single line of code, read these files in full:
+**CRITICAL:** All file operations and commands run **inside the worktree**, not in the main checkout. The orchestrator (or `run-story.sh`) has already created the worktree and branch for you.
 
 ```bash
+cd {WORKTREE_PATH}
 bash scripts/agent-log.sh developer {STORY_ID} "Step 2 — Reading context documents"
 cat CLAUDE.md
 cat {STORY_FILE_PATH}
@@ -70,17 +73,17 @@ Extract from the story file:
 - Dependencies (to understand what already exists)
 - Shared reference sections cited
 
-### Step 3 — Create Your Feature Branch
+### Step 3 — Verify Your Branch
+
+The worktree was created on the correct feature branch. Verify you are on it:
 
 ```bash
-bash scripts/agent-log.sh developer {STORY_ID} "Step 3 — Creating feature branch"
-git fetch origin
-git checkout main
-git pull origin main
-BRANCH="feat/$(echo {STORY_ID} | tr '[:upper:]' '[:lower:]')"
-git checkout -b "$BRANCH"
-# Example result: feat/infra-01
+bash scripts/agent-log.sh developer {STORY_ID} "Step 3 — Verifying feature branch"
+git branch --show-current
+# Should output: feat/{story-id-lowercase}
 ```
+
+If the branch is wrong, stop and report a blocker — do NOT switch branches yourself.
 
 ### Step 4 — Implement the Story Task-by-Task
 
@@ -326,7 +329,7 @@ cd src/frontend
 npm install
 ng build --configuration development   # verify it compiles
 ng test --watch=false --browsers=ChromeHeadless
-cd ../..
+cd {WORKTREE_PATH}   # return to worktree root, not ../..
 ```
 
 ### Step 6 — Commit
@@ -350,6 +353,8 @@ Files created:
 ```
 
 ### Step 7 — Update Story Status to Review
+
+All commands still run inside the worktree. `mark-story.sh` updates the `docs/` files within this worktree's checkout.
 
 ```bash
 bash scripts/agent-log.sh developer {STORY_ID} "Step 7 — Marking story for review"

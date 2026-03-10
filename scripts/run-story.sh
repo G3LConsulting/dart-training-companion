@@ -95,9 +95,11 @@ fi
 echo ""
 echo "🚀  Running developer agent"
 echo "────────────────────────────────────────────────────────"
-echo "    Story:  $STORY_ID"
-echo "    File:   $STORY_FILE"
-echo "    Branch: feat/$(echo "$STORY_ID" | tr '[:upper:]' '[:lower:]')"
+BRANCH_DISPLAY="feat/$(echo "$STORY_ID" | tr '[:upper:]' '[:lower:]')"
+echo "    Story:     $STORY_ID"
+echo "    File:      $STORY_FILE"
+echo "    Branch:    $BRANCH_DISPLAY"
+echo "    Worktree:  .worktrees/$BRANCH_DISPLAY"
 if [[ "$VERBOSE" == "true" ]]; then
     echo "    🔊 Verbose logging: ON"
 fi
@@ -126,6 +128,24 @@ echo ""
 # ── Mark story in-progress ────────────────────────────────────────────────────
 bash scripts/mark-story.sh "$STORY_ID" in-progress || true
 
+# ── Create git worktree ──────────────────────────────────────────────────────
+BRANCH="feat/$(echo "$STORY_ID" | tr '[:upper:]' '[:lower:]')"
+WORKTREE="$PROJECT_ROOT/.worktrees/$BRANCH"
+
+if [ -d "$WORKTREE" ]; then
+    echo "♻️   Reusing existing worktree: $WORKTREE"
+else
+    echo "🌲  Creating worktree: $WORKTREE → branch $BRANCH"
+    git fetch origin
+    # If the branch already exists, attach to it; otherwise create from main
+    if git show-ref --verify --quiet "refs/heads/$BRANCH" 2>/dev/null; then
+        git worktree add "$WORKTREE" "$BRANCH"
+    else
+        git worktree add "$WORKTREE" -b "$BRANCH" main
+    fi
+fi
+echo ""
+
 # ── Build developer agent prompt ──────────────────────────────────────────────
 DEVELOPER_PROMPT="$(cat .claude/agents/developer.md)
 
@@ -135,10 +155,12 @@ DEVELOPER_PROMPT="$(cat .claude/agents/developer.md)
 
 STORY_ID:        $STORY_ID
 STORY_FILE_PATH: $STORY_FILE
+WORKTREE_PATH:   $WORKTREE
 PROJECT_ROOT:    $PROJECT_ROOT
 Current date:    $(date '+%Y-%m-%d')
 VERBOSE:         $VERBOSE
 
+CRITICAL: cd into WORKTREE_PATH before doing any work. All files and commands run inside the worktree.
 Begin by reading your context documents (CLAUDE.md, the story file, and shared docs).
 Then implement the story end-to-end as described in your instructions above.
 Do not stop until the branch is committed and the story is marked for review.
