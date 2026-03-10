@@ -106,16 +106,17 @@ def parse_readme(readme_path: Path) -> dict[str, dict]:
         sys.exit(1)
 
     # ── Parse Mermaid dependency graph ──────────────────────────────────────
-    # Lines like:  INFRA-02 --> INFRA-01
-    # means INFRA-02 depends on INFRA-01 (arrow points to dependency)
+    # Graph uses natural top-down flow:  PREREQ --> DEPENDENT
+    # Example:  INFRA-01 --> AUTH-01   means AUTH-01 depends on INFRA-01
+    # The left side is the prerequisite, the right side is the dependent.
     dep_pattern = re.compile(r"^\s+([A-Z]+-\d+)\s*-->\s*([A-Z]+-\d+)", re.MULTILINE)
 
     for match in dep_pattern.finditer(text):
-        dependent  = match.group(1).strip()
-        dependency = match.group(2).strip()
+        prerequisite = match.group(1).strip()
+        dependent    = match.group(2).strip()
         if dependent in stories:
-            if dependency not in stories[dependent]["deps"]:
-                stories[dependent]["deps"].append(dependency)
+            if prerequisite not in stories[dependent]["deps"]:
+                stories[dependent]["deps"].append(prerequisite)
 
     return stories
 

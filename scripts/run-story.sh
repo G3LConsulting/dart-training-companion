@@ -8,15 +8,34 @@
 #   - Testing the developer agent on a single story
 #
 # Usage:
-#   bash scripts/run-story.sh <STORY-ID>
+#   bash scripts/run-story.sh <STORY-ID> [--verbose]
+#
+# Options:
+#   --verbose   The developer agent logs detailed progress (file reads, code
+#               decisions, build output, test results, each file created/modified).
+#               Without this flag, the agent logs only major step transitions.
 #
 # Examples:
 #   bash scripts/run-story.sh INFRA-01
-#   bash scripts/run-story.sh PROF-01
+#   bash scripts/run-story.sh PROF-01 --verbose
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-STORY_ID="${1:?Usage: $0 <STORY-ID>   (e.g. INFRA-01, PROF-01)}"
+STORY_ID=""
+VERBOSE=false
+
+for arg in "$@"; do
+    case "$arg" in
+        --verbose|-v) VERBOSE=true ;;
+        -*) echo "Unknown option: $arg"; exit 1 ;;
+        *) STORY_ID="$arg" ;;
+    esac
+done
+
+if [[ -z "$STORY_ID" ]]; then
+    echo "Usage: $0 <STORY-ID> [--verbose]   (e.g. INFRA-01, PROF-01)"
+    exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -79,6 +98,9 @@ echo "────────────────────────�
 echo "    Story:  $STORY_ID"
 echo "    File:   $STORY_FILE"
 echo "    Branch: feat/$(echo "$STORY_ID" | tr '[:upper:]' '[:lower:]')"
+if [[ "$VERBOSE" == "true" ]]; then
+    echo "    🔊 Verbose logging: ON"
+fi
 echo ""
 
 # ── Ask for confirmation ───────────────────────────────────────────────────────
@@ -115,6 +137,7 @@ STORY_ID:        $STORY_ID
 STORY_FILE_PATH: $STORY_FILE
 PROJECT_ROOT:    $PROJECT_ROOT
 Current date:    $(date '+%Y-%m-%d')
+VERBOSE:         $VERBOSE
 
 Begin by reading your context documents (CLAUDE.md, the story file, and shared docs).
 Then implement the story end-to-end as described in your instructions above.

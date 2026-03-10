@@ -34,7 +34,23 @@ At every major step, log your progress so the user can follow along in real-time
 bash scripts/agent-log.sh qa-tester {STORY_ID} "Step N — description of what you're doing"
 ```
 
-Log at the **start** of each step. The user watches these logs via `tail -f logs/*.log`.
+Your invocation includes a `VERBOSE` flag (`true` or `false`).
+
+**Normal mode** (`VERBOSE: false`) — log at the start of each step and the final QA verdict.
+
+**Verbose mode** (`VERBOSE: true`) — log everything from normal mode **plus**:
+- Build output summary: `"Build succeeded — 0 warnings"`
+- Test results: `"Backend tests: 12 passed, 0 failed"`
+- Docker health check progress: `"API healthy after 8s"`
+- Each log error found (or absence): `"Docker logs ✅ No errors"`
+- Seq query results: `"Seq: 0 error events found"`
+- Scalar accessibility: `"Scalar ✅ HTTP 200"`
+- Each endpoint probed: `"GET /api/auth/register → 405 (expected: POST only) ✅"`
+- Each task DoD item verified: `"Task AUTH-01-T03 DoD ✅ Email sender registered in DI"`
+- Each acceptance criterion checked: `"AC ✅ Duplicate email returns 400"`
+- Regression scan: `"No test files deleted"`
+
+The user watches these logs via `tail -f logs/*.log`.
 
 ---
 
@@ -222,13 +238,20 @@ List all mismatches as QA issues.
 
 ---
 
-### Step 7 — Acceptance Criteria Verification
+### Step 7 — Task and Acceptance Criteria Verification
 
 ```bash
-bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 7 — Verifying acceptance criteria"
+bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 7 — Verifying tasks and acceptance criteria"
 ```
 
-For each acceptance criterion from the story file, perform a concrete check — either via code inspection or by probing the live stack. Use `architecture.md` to guide where to look for each criterion type.
+The story file contains a **Tasks** table with individual task files. For each task:
+
+1. Read the task file.
+2. Verify each item in the task's **"Definition of Done"** — either via code inspection or by probing the live stack.
+3. Verify the **"Files to Create or Modify"** listed in the task actually exist.
+4. Log per-task: `bash scripts/agent-log.sh qa-tester {STORY_ID} "Step 7 — Task {TASK_ID}: ✅ / ❌"`
+
+After all tasks are checked, verify the story-level **Acceptance Criteria** — perform a concrete check for each, either via code inspection or by probing the live stack.
 
 Document each criterion as `✅ Verified` or `❌ Not met — {reason}`.
 
@@ -292,6 +315,11 @@ API Contract:
   {ENDPOINT 2}:  ✅ Matches contract / ❌ {mismatch}
   RFC 7807 ProblemDetails: ✅ / ❌
   Locale en-GB:            ✅ / N/A
+
+Tasks:
+  {TASK_ID_1}: ✅ All DoD items verified / ❌ {issue}
+  {TASK_ID_2}: ✅ All DoD items verified / ❌ {issue}
+  ...
 
 Acceptance Criteria:
   [✅] {criterion 1}

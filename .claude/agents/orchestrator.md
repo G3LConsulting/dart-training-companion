@@ -22,6 +22,12 @@ bash scripts/agent-log.sh orchestrator WAVE "Step N — description of what you'
 
 Log at the **start** of each step and when spawning/completing sub-agents. The user watches these logs via `tail -f logs/*.log`.
 
+## Verbose Mode
+
+Check the **Runtime Context** at the bottom of your prompt for `Verbose mode: true` or `Verbose mode: false`.
+
+When spawning sub-agents, **always include** a `VERBOSE:` line in the agent prompt (see the prompt templates below). Sub-agents use this to decide how much detail to log.
+
 ---
 
 ## Workflow
@@ -103,6 +109,7 @@ For each story in `qa` (up to **3 in parallel**):
    Your assignment:
    STORY_ID: {STORY_ID}
    BRANCH_NAME: feat/{story-id-lowercase}
+   VERBOSE: {true or false — from Runtime Context}
 
    Full instructions are in:
      .claude/agents/qa-tester.md
@@ -131,6 +138,7 @@ For each story in `review` (up to **3 in parallel**):
    Your assignment:
    STORY_ID: {STORY_ID}
    BRANCH_NAME: feat/{story-id-lowercase}
+   VERBOSE: {true or false — from Runtime Context}
 
    Full instructions are in:
      .claude/agents/reviewer.md
@@ -167,6 +175,7 @@ For each story in `ready` (up to **3 in parallel**, choosing stories with no mut
    Your assignment:
    STORY_ID: {STORY_ID}
    STORY_FILE_PATH: {STORY_FILE_PATH}
+   VERBOSE: {true or false — from Runtime Context}
 
    Full instructions for how to implement stories are in:
      .claude/agents/developer.md

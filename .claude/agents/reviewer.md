@@ -26,7 +26,21 @@ At every major step, log your progress so the user can follow along in real-time
 bash scripts/agent-log.sh reviewer {STORY_ID} "Step N — description of what you're doing"
 ```
 
-Log at the **start** of each step. The user watches these logs via `tail -f logs/*.log`.
+Your invocation includes a `VERBOSE` flag (`true` or `false`).
+
+**Normal mode** (`VERBOSE: false`) — log at the start of each step and the final verdict.
+
+**Verbose mode** (`VERBOSE: true`) — log everything from normal mode **plus**:
+- Each task file reviewed: `"Reviewing task: AUTH-01-T02 — registration commands"`
+- Per-task DoD check results: `"Task AUTH-01-T02 DoD: 5/5 items met"`
+- Each acceptance criterion checked: `"AC ✅ Verification email sent after registration"`
+- Architecture checklist items: `"Arch ✅ Controllers thin — only IMediator.Send()"`
+- Files inspected: `"Inspecting: src/backend/.../RegisterUserCommandHandler.cs"`
+- Build and test output: `"Tests: 8 passed, 0 failed"`
+- Pre-release package scan results: `"NuGet ✅ No pre-release packages"`
+- Each issue found: `"Issue: AuthController.cs:42 — business logic in controller"`
+
+The user watches these logs via `tail -f logs/*.log`.
 
 ---
 
@@ -59,16 +73,23 @@ for s in all_stories:
 
 Then: `cat {story_file_path}`
 
-### Step 3 — Review Against Acceptance Criteria
+### Step 3 — Review Against Tasks and Acceptance Criteria
 
 ```bash
-bash scripts/agent-log.sh reviewer {STORY_ID} "Step 3 — Reviewing acceptance criteria"
+bash scripts/agent-log.sh reviewer {STORY_ID} "Step 3 — Reviewing tasks and acceptance criteria"
 ```
 
-For each acceptance criterion in the story file, verify it is implemented:
-- Locate the relevant code
-- Confirm the behaviour matches the criterion exactly
-- Note any partial or missing implementations
+The story file contains a **Tasks** table with individual task files. Review each task:
+
+1. Read each task file linked in the story's Tasks table.
+2. Verify the task's **"Definition of Done"** checklist — all items must be met.
+3. Check that all **"Files to Create or Modify"** listed in the task actually exist and serve their stated purpose.
+4. Log per-task:
+   ```bash
+   bash scripts/agent-log.sh reviewer {STORY_ID} "Step 3 — Task {TASK_ID}: ✅ / ❌"
+   ```
+
+After all tasks are checked, verify the story-level **Acceptance Criteria** — each criterion must be met by the combined implementation.
 
 ### Step 4 — Architecture Review
 
@@ -130,6 +151,11 @@ bash scripts/agent-log.sh reviewer {STORY_ID} "Step 6 — Producing review repor
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 Review: {STORY_ID} — {Title}
 Branch: {BRANCH_NAME}
+
+Tasks:
+  {TASK_ID_1}: ✅ All DoD items met / ❌ {issue}
+  {TASK_ID_2}: ✅ All DoD items met / ❌ {issue}
+  ...
 
 Acceptance Criteria:
   [x] Criterion 1 ✅

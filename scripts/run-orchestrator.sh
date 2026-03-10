@@ -6,7 +6,12 @@
 # spawns developer sub-agents (via Claude Code Task tool), and reports results.
 #
 # Usage:
-#   bash scripts/run-orchestrator.sh
+#   bash scripts/run-orchestrator.sh [--verbose]
+#
+# Options:
+#   --verbose   Sub-agents log detailed progress (file reads, code decisions,
+#               build output, test results, each file created/modified).
+#               Without this flag, agents log only major step transitions.
 #
 # Prerequisites:
 #   - Claude Code CLI installed: https://claude.ai/code
@@ -16,6 +21,13 @@
 #     to ~/.zshrc for interactive sessions without approval prompts
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
+
+VERBOSE=false
+for arg in "$@"; do
+    case "$arg" in
+        --verbose|-v) VERBOSE=true ;;
+    esac
+done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -41,6 +53,9 @@ echo "🎯  Darts Training Companion — Multi-Agent Orchestrator"
 echo "────────────────────────────────────────────────────────"
 echo "📁  Project root: $PROJECT_ROOT"
 echo "📅  $(date '+%Y-%m-%d %H:%M')"
+if [[ "$VERBOSE" == "true" ]]; then
+    echo "🔊  Verbose logging: ON"
+fi
 echo ""
 echo "📊  Current story status (MVP scope):"
 python3 scripts/get-ready-stories.py --scope mvp | python3 -c "
@@ -101,6 +116,7 @@ ORCHESTRATOR_PROMPT="$(cat .claude/agents/orchestrator.md)
 Project root:  $PROJECT_ROOT
 Current date:  $(date '+%Y-%m-%d')
 Git branch:    $(git branch --show-current)
+Verbose mode:  $VERBOSE
 
 Begin now: run \`python3 scripts/get-ready-stories.py --scope mvp\` and execute your full workflow.
 "

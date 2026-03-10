@@ -20,7 +20,21 @@ At every major step, log your progress so the user can follow along in real-time
 bash scripts/agent-log.sh developer {STORY_ID} "Step N — description of what you're doing"
 ```
 
-Log at the **start** of each step. Log again when something notable happens (build result, test count, blocker found). The user watches these logs via `tail -f logs/*.log`.
+Your invocation includes a `VERBOSE` flag (`true` or `false`).
+
+**Normal mode** (`VERBOSE: false`) — log at the start of each step and on final outcomes (build pass/fail, test count, blocker).
+
+**Verbose mode** (`VERBOSE: true`) — log everything from normal mode **plus**:
+- Each context file as you read it: `"Reading: architecture.md"`
+- Each task file as you open it: `"Reading task: INFRA-01-T02"`
+- Each file you create or modify: `"Created: src/backend/.../GameSession.cs"`
+- Key implementation decisions: `"Using value converter for ConfigurationJson jsonb column"`
+- Build output summary: `"Build succeeded — 0 warnings"`
+- Individual test results: `"Tests: 12 passed, 0 failed"`
+- Each acceptance criterion verified: `"AC ✅ EF Core migration applies without error"`
+- Git operations: `"Committed feat(infra-01): solution scaffolding — 24 files"`
+
+The user watches these logs via `tail -f logs/*.log`.
 
 ---
 
@@ -51,8 +65,8 @@ cat docs/dev-plan/shared/non-functional-requirements.md
 ```
 
 Extract from the story file:
-- Acceptance criteria (your definition of done)
-- Technical implementation notes
+- **Tasks table** — the story contains a `## Tasks` section with a table of tasks (T01, T02, T03…). Each row links to a dedicated task file with detailed implementation instructions.
+- Acceptance criteria (your overall definition of done)
 - Dependencies (to understand what already exists)
 - Shared reference sections cited
 
@@ -68,21 +82,38 @@ git checkout -b "$BRANCH"
 # Example result: feat/infra-01
 ```
 
-### Step 4 — Implement the Story
+### Step 4 — Implement the Story Task-by-Task
+
+Stories contain a **Tasks** table with individual task files. Implement tasks **sequentially in table order** (T01, then T02, then T03…). Each task file contains specific instructions, files to create, and a definition of done.
 
 ```bash
-bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Implementing story"
+bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Starting task-by-task implementation"
 ```
 
-Log progress within Step 4 as you complete significant pieces of work:
-```bash
-bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Created domain entity: {EntityName}"
-bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Created command handler: {HandlerName}"
-bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Created controller: {ControllerName}"
-bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Frontend component created: {ComponentName}"
-```
+**For each task in the Tasks table:**
 
-Implement **every acceptance criterion** in the story file. Use the sections below for type-specific guidance.
+1. Read the task file linked in the table row:
+   ```bash
+   bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Task {TASK_ID}: reading task file"
+   cat {TASK_FILE_PATH}
+   ```
+
+2. Implement everything described in the task's **"What to Build"** and **"Files to Create or Modify"** sections.
+
+3. Verify the task's **"Definition of Done"** checklist — all items must pass before moving on.
+
+4. Log completion:
+   ```bash
+   bash scripts/agent-log.sh developer {STORY_ID} "Step 4 — Task {TASK_ID}: ✅ complete"
+   ```
+
+5. Move to the next task in table order.
+
+**Important:** If a task file has a **"Depends on"** field referencing another task within the same story, implement the dependency first. If it references a task from a different story, that dependency should already be implemented (the orchestrator ensures story-level dependencies are met before assigning you the story).
+
+After all tasks are complete, verify the story-level **Acceptance Criteria** as a final check.
+
+Use the sections below for type-specific guidance.
 
 ---
 
