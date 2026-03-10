@@ -46,7 +46,7 @@ Create docker-compose.yml with all 8 services (API, PWA, PostgreSQL, Seq, Promet
 
 1. **Docker Compose Services**:
    ```
-   - postgres: Latest PostgreSQL with persistent volume
+   - postgres: PostgreSQL 16 Alpine with persistent volume
    - seq: Structured logging (accessible at :5341)
    - prometheus: Metrics collection (accessible at :9090)
    - grafana: Dashboard UI (accessible at :3000)
@@ -58,7 +58,7 @@ Create docker-compose.yml with all 8 services (API, PWA, PostgreSQL, Seq, Promet
 
 2. **Dockerfile for API**:
    - Multi-stage build: restore dependencies in build stage, publish to runtime stage
-   - Use mcr.microsoft.com/dotnet/runtime:9.0 as base
+   - Use mcr.microsoft.com/dotnet/runtime:10.0 as base
    - Expose port 8080
    - Set ASPNETCORE_URLS=http://+:8080
    - ENTRYPOINT: dotnet DartsCompanion.Api.dll
@@ -73,7 +73,7 @@ Create docker-compose.yml with all 8 services (API, PWA, PostgreSQL, Seq, Promet
    - Version: '3.9'
    - Define networks: backend (internal), frontend (API + Web)
    - PostgreSQL:
-     - Image: postgres:latest
+     - Image: postgres:16-alpine
      - Environment: POSTGRES_PASSWORD, POSTGRES_DB
      - Volume: postgres_data:/var/lib/postgresql/data
    - Seq, Prometheus, Grafana, Mailhog with standard images

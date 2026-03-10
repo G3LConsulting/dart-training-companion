@@ -109,12 +109,25 @@ graph TD
 
 ## How to use this document as an agent
 
+> **Before your first story**, read the [Parallel Development Guide](shared/parallel-development-guide.md) — it contains the worktree workflow, bottleneck file patterns, and migration protocol you must follow.
+
 1. Find a story with status `🔲 Not started` whose dependencies are all `✅ Done`.
 2. Update its **Status** to `🔄 In progress` and set **Agent** to your identifier before starting work.
-3. Open the story file — it contains everything you need. Use the shared reference links for cross-cutting context.
-4. If you are blocked, append `🚫 Blocked` to the status and add a note in the **Notes** column explaining why.
-5. When done, set **Status** to `👀 Review`, fill in the **Output** link, and clear the **Agent** field.
-6. After review is approved, the reviewer sets **Status** to `✅ Done`.
+3. Create a **git worktree** for the story: `git worktree add ../worktree-{story-id} -b feature/{story-id}`
+4. Open the story file — it contains everything you need. Use the shared reference links for cross-cutting context.
+5. If you are blocked, append `🚫 Blocked` to the status and add a note in the **Notes** column explaining why.
+6. When done, push your branch, create a PR targeting `main`, and set **Status** to `👀 Review`.
+7. After review is approved, **squash merge** the PR with `--delete-branch`.
+8. **Mandatory cleanup:**
+   - Pull merged changes: `git pull origin main`
+   - Remove the worktree: `git worktree remove ../worktree-{story-id}`
+   - Delete local branch: `git branch -D feature/{story-id}`
+   - Verify: `git worktree list` shows only main, `git branch` shows only `main`
+9. **Verify on `main`:** `dotnet build` + `dotnet test` (+ `ng build` for frontend stories).
+10. **If verification passes** → set **Status** to `✅ Done`. All code now lives on `main`.
+11. **If verification fails → do NOT stop.** Create a fix worktree (`fix/{story-id}-{timestamp}`), fix the issue, PR, merge, cleanup, and **loop back to step 9**. Repeat until green (max 3 attempts). After 3 failures, set **Status** to `🚫 Blocked` and escalate.
+
+See [Parallel Development Guide — Fix Cycle](shared/parallel-development-guide.md#7-fix-cycle-when-verification-fails) for full details.
 
 ---
 

@@ -52,7 +52,7 @@ Create .github/workflows/build-deploy.yml with build, test, Docker build, and de
    - **deploy**: docker compose up (depends on build-docker, runs on self-hosted runner)
 
 3. **Self-Hosted Runner Setup**:
-   - Runner must have: dotnet SDK 9.0, Node.js 21+, Docker, docker-compose, nginx (for reverse proxy)
+   - Runner must have: dotnet SDK 10.0, Node.js 21+, Docker, docker-compose, nginx (for reverse proxy)
    - Runner registers with label: `self-hosted`
    - Workflow specifies: `runs-on: [self-hosted]`
    - Runner must have access to deploy directory and docker socket
